@@ -1,5 +1,97 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.2.0] - 2025-10-25
+
+### Changed
+- Complete architecture overhaul with modular design pattern
+- Migrated from monolithic client to entity-specific modules
+
+### Added
+- **Smart Dispatch**: Functions now intelligently accept both string MBIDs and entity maps
+- **Pattern Matching**: Automatic entity type detection based on map structure
+- **Extractor Module**: `SonEx.MusicBrainz.Extractor` for intelligent MBID extraction from nested structures
+- **Entity Modules**: Dedicated modules for all 13 entity types:
+  - `SonEx.MusicBrainz.Artist`
+  - `SonEx.MusicBrainz.Release`
+  - `SonEx.MusicBrainz.ReleaseGroup`
+  - `SonEx.MusicBrainz.Recording`
+  - `SonEx.MusicBrainz.Event`
+  - `SonEx.MusicBrainz.Label`
+  - `SonEx.MusicBrainz.Place`
+  - `SonEx.MusicBrainz.Work`
+  - `SonEx.MusicBrainz.Area`
+  - `SonEx.MusicBrainz.Genre`
+  - `SonEx.MusicBrainz.Instrument`
+  - `SonEx.MusicBrainz.Series`
+  - `SonEx.MusicBrainz.URL`
+- **Client Module**: Low-level HTTP client abstraction in `SonEx.MusicBrainz.Client`
+- **Unified Interface**: Main `SonEx.MusicBrainz` module with defdelegate for clean API
+- **Enhanced Documentation**:
+  - `docs/api_response_examples.md` - Real API response structures
+  - Updated `CLAUDE.md` with new architecture details
+
+### Improved
+- Test coverage increased from 39.55% to 92.75%
+- Test suite expanded from 42 to 182 tests
+- All tests passing with comprehensive coverage:
+  - Entity module tests (33 tests)
+  - Extractor pattern matching tests (62 tests)
+  - Smart dispatch integration tests (87 tests)
+  - Complex extraction patterns (place from events, work from recordings, series detection)
+  - Search query edge cases and fallback patterns
+
+### Features
+- **Map-Based Queries**: All search functions accept maps with field names (e.g., `%{"name" => "Nirvana"}`)
+- **Intelligent Extraction**: Automatically extracts MBIDs from:
+  - `artist-credit` arrays in releases/recordings
+  - `release-group` in releases
+  - `area`, `begin-area` in various entities
+  - `release-events` in releases
+  - Relations in events (place extraction)
+  - Relations in recordings (work extraction)
+- **Entity Type Detection**: Pattern matching on unique field combinations:
+  - Artists: `type` in ["Group", "Person"] + `life-span`
+  - Releases: `status` + `packaging` or `status-id` + `release-events`
+  - Recordings: `length` (number) + `video` (boolean)
+  - Release Groups: `primary-type` + `secondary-types`
+  - Labels: `label-code`
+  - Areas: `iso-3166-1-codes`
+  - Events: `cancelled` (boolean)
+  - Places: `coordinates` with `latitude` + `longitude`
+  - Works: `iswcs` or `languages` + `title`
+  - Series: Specific type values ("Release group series", etc.)
+
+
+**Smart Dispatch:**
+```elixir
+# Before: Manual ID extraction
+{:ok, release} = MB.lookup(:release, "release-mbid")
+artist_id = release["artist-credit"] |> List.first() |> get_in(["artist", "id"])
+{:ok, artist} = MB.lookup(:artist, artist_id)
+
+# After: Automatic extraction
+{:ok, release} = MB.lookup_release("release-mbid")
+{:ok, artist} = MB.lookup_artist(release)
+```
+
+**Module-Based API:**
+```elixir
+# You can now use entity-specific modules directly
+SonEx.MusicBrainz.Artist.lookup("mbid")
+SonEx.MusicBrainz.Release.browse([artist: "mbid"])
+SonEx.MusicBrainz.Recording.search("title:Bohemian Rhapsody")
+
+# Or use the unified interface
+SonEx.MusicBrainz.lookup_artist("mbid")
+SonEx.MusicBrainz.browse_releases([artist: "mbid"])
+SonEx.MusicBrainz.search_recordings("title:Bohemian Rhapsody")
+```
+
 ## [0.1.0] - 2025-10-25
 
 ### Added
@@ -7,7 +99,7 @@
 - Support for all 13 MusicBrainz entity types (area, artist, event, genre, instrument, label, place, recording, release, release_group, series, work, url)
 - Three main operations: `lookup/3`, `browse/3`, and `search/3`
 - Configurable user agent and HTTP options via Mix config
-- Comprehensive test suite with 98.72% code coverage
+- Test suite with mock-based testing
 - Full documentation with ExDoc support
 
 ### Features
@@ -18,4 +110,5 @@
 - **Type specs**: Full type specifications for all public functions
 - **Mock-based testing**: No real API calls required for testing
 
+[0.2.0]: https://github.com/son-ex/son-ex-musicbrainz-client/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/son-ex/son-ex-musicbrainz-client/releases/tag/v0.1.0

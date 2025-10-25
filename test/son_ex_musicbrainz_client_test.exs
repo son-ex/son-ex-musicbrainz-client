@@ -1,6 +1,8 @@
-defmodule SonExMusicbrainzClientTest do
+defmodule SonExMusicbrainzTest do
   use ExUnit.Case
-  # doctest SonExMusicbrainzClient - disabled due to mock-based testing
+  # doctest SonEx.MusicBrainz - disabled due to mock-based testing
+
+  alias SonEx.MusicBrainz
 
   setup do
     # Create a mock plug for testing
@@ -134,30 +136,30 @@ defmodule SonExMusicbrainzClientTest do
 
   describe "lookup/3" do
     test "looks up an artist by MBID" do
-      assert {:ok, artist} = SonExMusicbrainzClient.lookup(:artist, "test-mbid-123")
+      assert {:ok, artist} = MusicBrainz.lookup_artist("test-mbid-123")
       assert artist["id"] == "test-mbid"
       assert artist["name"] == "Test Artist"
     end
 
     test "looks up a release by MBID" do
-      assert {:ok, release} = SonExMusicbrainzClient.lookup(:release, "release-mbid-456")
+      assert {:ok, release} = MusicBrainz.lookup_release("release-mbid-456")
       assert release["id"] == "test-mbid"
       assert release["title"] == "Test Album"
     end
 
     test "looks up a recording by MBID" do
-      assert {:ok, recording} = SonExMusicbrainzClient.lookup(:recording, "recording-mbid-789")
+      assert {:ok, recording} = MusicBrainz.lookup_recording("recording-mbid-789")
       assert recording["id"] == "test-mbid"
       assert recording["title"] == "Test Recording"
     end
 
     test "looks up a release_group by MBID" do
-      assert {:ok, rg} = SonExMusicbrainzClient.lookup(:release_group, "rg-mbid-101")
+      assert {:ok, rg} = MusicBrainz.lookup_release_group("rg-mbid-101")
       assert rg["id"] == "test-mbid"
       assert rg["title"] == "Test Release Group"
     end
 
-    test "looks up all entity types" do
+    test "looks up all entity types using generic lookup" do
       entity_types = [
         :area,
         :artist,
@@ -175,7 +177,7 @@ defmodule SonExMusicbrainzClientTest do
       ]
 
       for entity_type <- entity_types do
-        assert {:ok, result} = SonExMusicbrainzClient.lookup(entity_type, "test-mbid")
+        assert {:ok, result} = MusicBrainz.lookup(entity_type, "test-mbid")
         assert is_map(result)
         assert result["id"] == "test-mbid"
       end
@@ -183,14 +185,14 @@ defmodule SonExMusicbrainzClientTest do
 
     test "accepts inc parameter as list" do
       assert {:ok, artist} =
-               SonExMusicbrainzClient.lookup(:artist, "test-mbid", inc: ["recordings", "releases"])
+               MusicBrainz.lookup_artist("test-mbid", inc: ["recordings", "releases"])
 
       assert artist["id"] == "test-mbid"
     end
 
     test "accepts inc parameter as string" do
       assert {:ok, artist} =
-               SonExMusicbrainzClient.lookup(:artist, "test-mbid", inc: "recordings+releases")
+               MusicBrainz.lookup_artist("test-mbid", inc: "recordings+releases")
 
       assert artist["id"] == "test-mbid"
     end
@@ -208,7 +210,7 @@ defmodule SonExMusicbrainzClientTest do
       ]
 
       for entity_type <- entity_types do
-        assert {:ok, result} = SonExMusicbrainzClient.lookup(entity_type, "test-mbid")
+        assert {:ok, result} = MusicBrainz.lookup(entity_type, "test-mbid")
         assert is_map(result)
         assert result["id"] == "test-mbid"
       end
@@ -217,25 +219,25 @@ defmodule SonExMusicbrainzClientTest do
 
   describe "browse/3" do
     test "browses releases by artist" do
-      assert {:ok, result} = SonExMusicbrainzClient.browse(:release, [artist: "artist-mbid"])
+      assert {:ok, result} = MusicBrainz.browse_releases(artist: "artist-mbid")
       assert is_list(result["releases"])
       assert length(result["releases"]) == 2
     end
 
     test "browses artists by area" do
-      assert {:ok, result} = SonExMusicbrainzClient.browse(:artist, [area: "area-mbid"])
+      assert {:ok, result} = MusicBrainz.browse_artists(area: "area-mbid")
       assert is_list(result["artists"])
       assert result["artists-count"] == 2
     end
 
     test "browses recordings by release" do
-      assert {:ok, result} = SonExMusicbrainzClient.browse(:recording, [release: "release-mbid"])
+      assert {:ok, result} = MusicBrainz.browse_recordings(release: "release-mbid")
       assert is_list(result["recordings"])
     end
 
     test "browses with limit and offset" do
       assert {:ok, result} =
-               SonExMusicbrainzClient.browse(:release, [artist: "artist-mbid"],
+               MusicBrainz.browse_releases([artist: "artist-mbid"],
                  limit: 50,
                  offset: 25
                )
@@ -245,7 +247,7 @@ defmodule SonExMusicbrainzClientTest do
 
     test "browses with inc parameter" do
       assert {:ok, result} =
-               SonExMusicbrainzClient.browse(:artist, [area: "area-mbid"],
+               MusicBrainz.browse_artists([area: "area-mbid"],
                  inc: ["aliases", "tags"]
                )
 
@@ -263,7 +265,7 @@ defmodule SonExMusicbrainzClientTest do
       ]
 
       for relationship <- relationships do
-        assert {:ok, result} = SonExMusicbrainzClient.browse(:artist, relationship)
+        assert {:ok, result} = MusicBrainz.browse_artists(relationship)
         assert is_map(result)
         assert is_list(result["artists"])
       end
@@ -281,14 +283,14 @@ defmodule SonExMusicbrainzClientTest do
       ]
 
       for relationship <- relationships do
-        assert {:ok, result} = SonExMusicbrainzClient.browse(:release, relationship)
+        assert {:ok, result} = MusicBrainz.browse_releases(relationship)
         assert is_map(result)
         assert is_list(result["releases"])
       end
     end
 
     test "browses areas by collection" do
-      assert {:ok, result} = SonExMusicbrainzClient.browse(:area, [collection: "collection-mbid"])
+      assert {:ok, result} = MusicBrainz.browse(:area, collection: "collection-mbid")
       assert is_map(result)
       assert is_list(result["areas"])
     end
@@ -302,13 +304,13 @@ defmodule SonExMusicbrainzClientTest do
       ]
 
       for relationship <- relationships do
-        assert {:ok, result} = SonExMusicbrainzClient.browse(:event, relationship)
+        assert {:ok, result} = MusicBrainz.browse(:event, relationship)
         assert is_map(result)
       end
     end
 
     test "browses instruments by collection" do
-      assert {:ok, result} = SonExMusicbrainzClient.browse(:instrument, [collection: "collection-mbid"])
+      assert {:ok, result} = MusicBrainz.browse(:instrument, collection: "collection-mbid")
       assert is_map(result)
     end
 
@@ -320,7 +322,7 @@ defmodule SonExMusicbrainzClientTest do
       ]
 
       for relationship <- relationships do
-        assert {:ok, result} = SonExMusicbrainzClient.browse(:label, relationship)
+        assert {:ok, result} = MusicBrainz.browse(:label, relationship)
         assert is_map(result)
       end
     end
@@ -332,7 +334,7 @@ defmodule SonExMusicbrainzClientTest do
       ]
 
       for relationship <- relationships do
-        assert {:ok, result} = SonExMusicbrainzClient.browse(:place, relationship)
+        assert {:ok, result} = MusicBrainz.browse(:place, relationship)
         assert is_map(result)
       end
     end
@@ -346,7 +348,7 @@ defmodule SonExMusicbrainzClientTest do
       ]
 
       for relationship <- relationships do
-        assert {:ok, result} = SonExMusicbrainzClient.browse(:recording, relationship)
+        assert {:ok, result} = MusicBrainz.browse_recordings(relationship)
         assert is_map(result)
       end
     end
@@ -359,13 +361,13 @@ defmodule SonExMusicbrainzClientTest do
       ]
 
       for relationship <- relationships do
-        assert {:ok, result} = SonExMusicbrainzClient.browse(:release_group, relationship)
+        assert {:ok, result} = MusicBrainz.browse_release_groups(relationship)
         assert is_map(result)
       end
     end
 
     test "browses series by collection" do
-      assert {:ok, result} = SonExMusicbrainzClient.browse(:series, [collection: "collection-mbid"])
+      assert {:ok, result} = MusicBrainz.browse(:series, collection: "collection-mbid")
       assert is_map(result)
     end
 
@@ -376,38 +378,38 @@ defmodule SonExMusicbrainzClientTest do
       ]
 
       for relationship <- relationships do
-        assert {:ok, result} = SonExMusicbrainzClient.browse(:work, relationship)
+        assert {:ok, result} = MusicBrainz.browse(:work, relationship)
         assert is_map(result)
       end
     end
 
     test "browses urls by resource" do
-      assert {:ok, result} = SonExMusicbrainzClient.browse(:url, [resource: "resource-mbid"])
+      assert {:ok, result} = MusicBrainz.browse(:url, resource: "resource-mbid")
       assert is_map(result)
     end
   end
 
   describe "search/3" do
     test "searches for artists" do
-      assert {:ok, result} = SonExMusicbrainzClient.search(:artist, "artist:nirvana")
+      assert {:ok, result} = MusicBrainz.search_artists("artist:nirvana")
       assert is_list(result["artists"])
       assert result["count"] == 2
       assert result["offset"] == 0
     end
 
     test "searches for releases" do
-      assert {:ok, result} = SonExMusicbrainzClient.search(:release, "release:nevermind")
+      assert {:ok, result} = MusicBrainz.search_releases("release:nevermind")
       assert is_list(result["releases"])
     end
 
     test "searches for recordings" do
-      assert {:ok, result} = SonExMusicbrainzClient.search(:recording, "recording:test")
+      assert {:ok, result} = MusicBrainz.search_recordings("recording:test")
       assert is_list(result["recordings"])
     end
 
     test "searches with limit and offset" do
       assert {:ok, result} =
-               SonExMusicbrainzClient.search(:artist, "artist:test", limit: 10, offset: 5)
+               MusicBrainz.search_artists("artist:test", limit: 10, offset: 5)
 
       assert result["offset"] == 5
     end
@@ -428,17 +430,14 @@ defmodule SonExMusicbrainzClientTest do
 
       for entity_type <- entity_types do
         query_string = Atom.to_string(entity_type) <> ":test"
-        assert {:ok, result} = SonExMusicbrainzClient.search(entity_type, query_string)
+        assert {:ok, result} = MusicBrainz.search(entity_type, query_string)
         assert is_map(result)
       end
     end
 
     test "handles complex Lucene queries" do
       assert {:ok, result} =
-               SonExMusicbrainzClient.search(
-                 :artist,
-                 "artist:beatles AND country:GB AND type:group"
-               )
+               MusicBrainz.search_artists("artist:beatles AND country:GB AND type:group")
 
       assert is_map(result)
     end
@@ -459,7 +458,7 @@ defmodule SonExMusicbrainzClientTest do
       Application.put_env(:son_ex_musicbrainz_client, :http_options, plug: url_capture_plug)
 
       assert {:ok, _} =
-               SonExMusicbrainzClient.lookup(:artist, "test", inc: ["recordings", "releases"])
+               MusicBrainz.lookup_artist("test", inc: ["recordings", "releases"])
 
       Application.delete_env(:son_ex_musicbrainz_client, :http_options)
     end
@@ -478,7 +477,7 @@ defmodule SonExMusicbrainzClientTest do
       Application.put_env(:son_ex_musicbrainz_client, :http_options, plug: url_capture_plug)
 
       assert {:ok, _} =
-               SonExMusicbrainzClient.lookup(:artist, "test", inc: "recordings+releases")
+               MusicBrainz.lookup_artist("test", inc: "recordings+releases")
 
       Application.delete_env(:son_ex_musicbrainz_client, :http_options)
     end
@@ -496,14 +495,14 @@ defmodule SonExMusicbrainzClientTest do
 
       Application.put_env(:son_ex_musicbrainz_client, :http_options, plug: url_capture_plug)
 
-      assert {:ok, _} = SonExMusicbrainzClient.browse(:artist, [release_group: "test-mbid"])
+      assert {:ok, _} = MusicBrainz.browse_artists(release_group: "test-mbid")
 
       Application.delete_env(:son_ex_musicbrainz_client, :http_options)
     end
 
     test "handles release_group entity type in lookup URL" do
       # Test that release_group entity type is converted to release-group in URL
-      assert {:ok, _} = SonExMusicbrainzClient.lookup(:release_group, "test-mbid")
+      assert {:ok, _} = MusicBrainz.lookup_release_group("test-mbid")
     end
 
     test "converts numeric parameters to strings" do
@@ -520,7 +519,7 @@ defmodule SonExMusicbrainzClientTest do
       Application.put_env(:son_ex_musicbrainz_client, :http_options, plug: url_capture_plug)
 
       assert {:ok, _} =
-               SonExMusicbrainzClient.browse(:release, [artist: "test"],
+               MusicBrainz.browse_releases([artist: "test"],
                  limit: 50,
                  offset: 100
                )
@@ -544,7 +543,7 @@ defmodule SonExMusicbrainzClientTest do
 
       # Use lookup with release_group in opts to exercise the normalize_param clause
       assert {:ok, _} =
-               SonExMusicbrainzClient.lookup(:artist, "test-mbid",
+               MusicBrainz.lookup_artist("test-mbid",
                  release_group: "rg-mbid-123"
                )
 
@@ -559,7 +558,7 @@ defmodule SonExMusicbrainzClientTest do
       # Create a plug that captures headers
       header_capture_plug = fn conn ->
         user_agent = Plug.Conn.get_req_header(conn, "user-agent") |> List.first()
-        assert user_agent == "SonExMusicbrainzClient/0.1.0"
+        assert user_agent == "SonExMusicbrainz/0.2.0"
 
         conn
         |> Plug.Conn.put_resp_content_type("application/json")
@@ -568,7 +567,7 @@ defmodule SonExMusicbrainzClientTest do
 
       Application.put_env(:son_ex_musicbrainz_client, :http_options, plug: header_capture_plug)
 
-      assert {:ok, _} = SonExMusicbrainzClient.lookup(:artist, "test")
+      assert {:ok, _} = MusicBrainz.lookup_artist("test")
 
       Application.delete_env(:son_ex_musicbrainz_client, :http_options)
     end
@@ -588,7 +587,7 @@ defmodule SonExMusicbrainzClientTest do
 
       Application.put_env(:son_ex_musicbrainz_client, :http_options, plug: header_capture_plug)
 
-      assert {:ok, _} = SonExMusicbrainzClient.lookup(:artist, "test")
+      assert {:ok, _} = MusicBrainz.lookup_artist("test")
 
       Application.delete_env(:son_ex_musicbrainz_client, :http_options)
       Application.delete_env(:son_ex_musicbrainz_client, :user_agent)
@@ -606,7 +605,7 @@ defmodule SonExMusicbrainzClientTest do
 
       Application.put_env(:son_ex_musicbrainz_client, :http_options, plug: header_capture_plug)
 
-      assert {:ok, _} = SonExMusicbrainzClient.lookup(:artist, "test")
+      assert {:ok, _} = MusicBrainz.lookup_artist("test")
 
       Application.delete_env(:son_ex_musicbrainz_client, :http_options)
     end
@@ -625,7 +624,7 @@ defmodule SonExMusicbrainzClientTest do
 
       Application.put_env(:son_ex_musicbrainz_client, :http_options, plug: url_capture_plug)
 
-      assert {:ok, _} = SonExMusicbrainzClient.lookup(:artist, "test-mbid")
+      assert {:ok, _} = MusicBrainz.lookup_artist("test-mbid")
 
       Application.delete_env(:son_ex_musicbrainz_client, :http_options)
     end
@@ -644,7 +643,7 @@ defmodule SonExMusicbrainzClientTest do
       Application.put_env(:son_ex_musicbrainz_client, :http_options, plug: url_capture_plug)
 
       assert {:ok, _} =
-               SonExMusicbrainzClient.lookup(:artist, "test",
+               MusicBrainz.lookup_artist("test",
                  inc: ["recordings", "releases"],
                  limit: 50
                )

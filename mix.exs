@@ -1,7 +1,7 @@
 defmodule SonExMusicbrainzClient.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.2.0"
   @source_url "https://github.com/son-ex/son-ex-musicbrainz-client"
 
   def project do
@@ -43,7 +43,7 @@ defmodule SonExMusicbrainzClient.MixProject do
   defp package do
     [
       name: "son_ex_musicbrainz_client",
-      files: ~w(lib .formatter.exs mix.exs README.md LICENSE CHANGELOG.md),
+      files: ~w(lib docs .formatter.exs mix.exs README.md LICENSE CHANGELOG.md),
       licenses: ["MIT"],
       links: %{
         "GitHub" => @source_url,
