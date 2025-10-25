@@ -1,0 +1,314 @@
+# SonEx MusicBrainz Client
+
+A lightweight, Elixir client for the [MusicBrainz API v2](https://musicbrainz.org/doc/MusicBrainz_API).
+
+[![Hex.pm](https://img.shields.io/hexpm/v/son_ex_musicbrainz_client.svg)](https://hex.pm/packages/son_ex_musicbrainz_client)
+[![Documentation](https://img.shields.io/badge/hex-docs-purple.svg)](https://hexdocs.pm/son_ex_musicbrainz_client)
+
+## Installation
+
+Add `son_ex_musicbrainz_client` to your list of dependencies in `mix.exs`:
+
+```elixir
+def deps do
+  [
+    {:son_ex_musicbrainz_client, "~> 0.1.0"}
+  ]
+end
+```
+
+Then run:
+
+```bash
+mix deps.get
+```
+
+## Configuration
+
+### User Agent (Required for Production)
+
+MusicBrainz requires a user agent identifying your application. Configure it in `config/config.exs`:
+
+```elixir
+config :son_ex_musicbrainz_client,
+  user_agent: "MyApp/1.0 (contact@example.com)"
+```
+
+### HTTP Options (Optional)
+
+You can configure additional HTTP options for the Req client:
+
+```elixir
+config :son_ex_musicbrainz_client,
+  http_options: [
+    # Add custom options here
+    receive_timeout: 30_000
+  ]
+```
+
+## Usage
+
+### Lookup by MBID
+
+Retrieve a specific entity using its MusicBrainz Identifier (MBID):
+
+```elixir
+# Look up an artist
+{:ok, artist} = SonExMusicbrainzClient.lookup(:artist, "5b11f4ce-a62d-471e-81fc-a69a8278c7da")
+artist["name"]
+# => "Nirvana"
+
+# Look up a release with additional data
+{:ok, release} = SonExMusicbrainzClient.lookup(
+  :release,
+  "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  inc: ["artists", "labels", "recordings"]
+)
+
+# Look up a recording
+{:ok, recording} = SonExMusicbrainzClient.lookup(:recording, "recording-mbid-here")
+recording["title"]
+# => "Smells Like Teen Spirit"
+```
+
+**Supported entity types for lookup:**
+`:area`, `:artist`, `:event`, `:genre`, `:instrument`, `:label`, `:place`, `:recording`, `:release`, `:release_group`, `:series`, `:work`, `:url`
+
+**Common options:**
+- `:inc` - List of subqueries (e.g., `["artists", "releases", "recordings"]`)
+
+### Browse Relationships
+
+Discover entities related to another entity:
+
+```elixir
+# Browse all releases by an artist
+{:ok, result} = SonExMusicbrainzClient.browse(
+  :release,
+  [artist: "5b11f4ce-a62d-471e-81fc-a69a8278c7da"],
+  limit: 50
+)
+result["releases"]
+# => [%{"id" => "...", "title" => "Nevermind"}, ...]
+
+# Browse recordings on a release
+{:ok, result} = SonExMusicbrainzClient.browse(
+  :recording,
+  [release: "release-mbid"],
+  inc: ["artist-credits"]
+)
+
+# Browse artists from an area
+{:ok, result} = SonExMusicbrainzClient.browse(
+  :artist,
+  [area: "area-mbid"],
+  offset: 100,
+  limit: 25
+)
+
+# Browse release groups by artist
+{:ok, result} = SonExMusicbrainzClient.browse(
+  :release_group,
+  [artist: "artist-mbid"],
+  type: "album"
+)
+```
+
+**Common browse relationships by entity:**
+
+- **Artist**: `area`, `collection`, `recording`, `release`, `release_group`, `work`
+- **Release**: `artist`, `collection`, `label`, `track`, `track_artist`, `recording`, `release_group`
+- **Recording**: `artist`, `collection`, `release`, `work`
+- **Release Group**: `artist`, `collection`, `release`
+- **Event**: `area`, `artist`, `collection`, `place`
+- **Label**: `area`, `collection`, `release`
+- **Place**: `area`, `collection`
+- **Work**: `artist`, `collection`
+- **Area**: `collection`
+- **Instrument**: `collection`
+- **Series**: `collection`
+- **URL**: `resource`
+
+**Common options:**
+- `:limit` - Number of results (default: 25, max: 100)
+- `:offset` - Pagination offset
+- `:inc` - Additional data to include
+- `:type` - Type filter (for releases and release groups)
+- `:status` - Status filter (for releases)
+
+### Search
+
+Full-text search using Lucene query syntax:
+
+```elixir
+# Search for artists
+{:ok, result} = SonExMusicbrainzClient.search(:artist, "artist:nirvana AND country:US")
+result["artists"]
+# => [%{"id" => "...", "name" => "Nirvana", "score" => 100}, ...]
+result["count"]
+# => 15
+
+# Search for releases with pagination
+{:ok, result} = SonExMusicbrainzClient.search(
+  :release,
+  "release:nevermind AND artist:nirvana",
+  limit: 10,
+  offset: 0
+)
+
+# Search for recordings
+{:ok, result} = SonExMusicbrainzClient.search(
+  :recording,
+  "recording:\"Smells Like Teen Spirit\" AND artist:nirvana"
+)
+
+# Complex search with multiple criteria
+{:ok, result} = SonExMusicbrainzClient.search(
+  :artist,
+  "artist:beatles AND country:GB AND type:group",
+  limit: 25
+)
+```
+
+**Supported entity types for search:**
+`:area`, `:artist`, `:event`, `:genre`, `:instrument`, `:label`, `:place`, `:recording`, `:release`, `:release_group`, `:series`, `:work`, `:url`
+
+**Common search fields by entity:**
+
+- **Artist**: `artist`, `alias`, `type`, `gender`, `area`, `tag`, `arid` (MBID)
+- **Release**: `release`, `artist`, `date`, `country`, `barcode`, `status`, `reid` (MBID)
+- **Recording**: `recording`, `artist`, `release`, `date`, `isrc`, `rid` (MBID)
+- **Release Group**: `releasegroup`, `artist`, `type`, `tag`, `rgid` (MBID)
+- **Label**: `label`, `area`, `type`, `code`, `laid` (MBID)
+- **Work**: `work`, `artist`, `type`, `tag`, `wid` (MBID)
+
+See the [MusicBrainz Search Documentation](https://musicbrainz.org/doc/MusicBrainz_API/Search) for complete field references.
+
+**Common options:**
+- `:limit` - Number of results (default: 25, max: 100)
+- `:offset` - Pagination offset
+
+### Response Format
+
+All functions return native Elixir maps parsed from JSON:
+
+```elixir
+# Successful response
+{:ok, data} = SonExMusicbrainzClient.lookup(:artist, "mbid-here")
+# data is a map: %{"id" => "...", "name" => "...", ...}
+
+# Error responses are passed through from Req
+{:error, reason} = SonExMusicbrainzClient.lookup(:artist, "invalid-mbid")
+# Handle errors as needed
+```
+
+## Examples
+
+### Finding an Artist's Discography
+
+```elixir
+artist_mbid = "5b11f4ce-a62d-471e-81fc-a69a8278c7da" # Nirvana
+
+# Get artist info
+{:ok, artist} = SonExMusicbrainzClient.lookup(:artist, artist_mbid)
+IO.puts("Artist: #{artist["name"]}")
+
+# Browse all official albums
+{:ok, result} = SonExMusicbrainzClient.browse(
+  :release_group,
+  [artist: artist_mbid],
+  type: "album",
+  limit: 100
+)
+
+Enum.each(result["release-groups"], fn rg ->
+  IO.puts("  #{rg["title"]} (#{rg["first-release-date"]})")
+end)
+```
+
+### Searching for Recordings by ISRC
+
+```elixir
+isrc = "USCA29900012"
+
+{:ok, result} = SonExMusicbrainzClient.search(:recording, "isrc:#{isrc}")
+
+case result["recordings"] do
+  [recording | _] ->
+    IO.puts("Found: #{recording["title"]}")
+    IO.puts("Artist: #{get_in(recording, ["artist-credit", 0, "name"])}")
+  [] ->
+    IO.puts("No recording found for ISRC: #{isrc}")
+end
+```
+
+### Getting Label Catalog
+
+```elixir
+label_mbid = "label-mbid-here"
+
+# Get all releases from a label
+{:ok, label_info} = SonExMusicbrainzClient.lookup(:label, label_mbid)
+
+{:ok, releases} = SonExMusicbrainzClient.browse(
+  :release,
+  [label: label_mbid],
+  limit: 100,
+  inc: ["artists", "release-groups"]
+)
+
+IO.puts("Label: #{label_info["name"]}")
+IO.puts("Total releases: #{releases["release-count"]}")
+```
+
+## Rate Limiting
+
+MusicBrainz enforces rate limits (approximately 1 request per second for anonymous users). This client does **not** implement rate limiting internally.
+
+For production applications, you should implement rate limiting at a higher level (e.g., using a GenServer-based queue, a library like `ex_rated`, or a supervision tree managing backpressure).
+
+## Testing
+
+The library includes comprehensive tests using mock-based testing (no real API calls):
+
+```bash
+# Run tests
+mix test
+
+# Run tests with coverage
+mix test --cover
+```
+
+## API Documentation
+
+For detailed API documentation, see:
+
+- [MusicBrainz API Documentation](https://musicbrainz.org/doc/MusicBrainz_API)
+- [MusicBrainz Search Syntax](https://musicbrainz.org/doc/MusicBrainz_API/Search)
+- [Generated HexDocs](https://hexdocs.pm/son_ex_musicbrainz_client)
+
+## Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+Please ensure:
+- All tests pass (`mix test`)
+- Code is formatted (`mix format`)
+- Coverage remains high (`mix test --cover`)
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+
+## Resources
+
+- [MusicBrainz API](https://musicbrainz.org/doc/MusicBrainz_API)
+- [MusicBrainz Database](https://musicbrainz.org/doc/MusicBrainz_Database)
+- [Lucene Query Syntax](https://lucene.apache.org/core/2_9_4/queryparsersyntax.html)
