@@ -54,19 +54,19 @@ Retrieve a specific entity using its MusicBrainz Identifier (MBID):
 
 ```elixir
 # Look up an artist
-{:ok, artist} = SonExMusicbrainzClient.lookup(:artist, "5b11f4ce-a62d-471e-81fc-a69a8278c7da")
+{:ok, artist} = SonEx.MusicBrainz.lookup(:artist, "5b11f4ce-a62d-471e-81fc-a69a8278c7da")
 artist["name"]
 # => "Nirvana"
 
 # Look up a release with additional data
-{:ok, release} = SonExMusicbrainzClient.lookup(
+{:ok, release} = SonEx.MusicBrainz.lookup(
   :release,
   "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   inc: ["artists", "labels", "recordings"]
 )
 
 # Look up a recording
-{:ok, recording} = SonExMusicbrainzClient.lookup(:recording, "recording-mbid-here")
+{:ok, recording} = SonEx.MusicBrainz.lookup(:recording, "recording-mbid-here")
 recording["title"]
 # => "Smells Like Teen Spirit"
 ```
@@ -83,7 +83,7 @@ Discover entities related to another entity:
 
 ```elixir
 # Browse all releases by an artist
-{:ok, result} = SonExMusicbrainzClient.browse(
+{:ok, result} = SonEx.MusicBrainz.browse(
   :release,
   [artist: "5b11f4ce-a62d-471e-81fc-a69a8278c7da"],
   limit: 50
@@ -92,14 +92,14 @@ result["releases"]
 # => [%{"id" => "...", "title" => "Nevermind"}, ...]
 
 # Browse recordings on a release
-{:ok, result} = SonExMusicbrainzClient.browse(
+{:ok, result} = SonEx.MusicBrainz.browse(
   :recording,
   [release: "release-mbid"],
   inc: ["artist-credits"]
 )
 
 # Browse artists from an area
-{:ok, result} = SonExMusicbrainzClient.browse(
+{:ok, result} = SonEx.MusicBrainz.browse(
   :artist,
   [area: "area-mbid"],
   offset: 100,
@@ -107,7 +107,7 @@ result["releases"]
 )
 
 # Browse release groups by artist
-{:ok, result} = SonExMusicbrainzClient.browse(
+{:ok, result} = SonEx.MusicBrainz.browse(
   :release_group,
   [artist: "artist-mbid"],
   type: "album"
@@ -142,14 +142,14 @@ Full-text search using Lucene query syntax:
 
 ```elixir
 # Search for artists
-{:ok, result} = SonExMusicbrainzClient.search(:artist, "artist:nirvana AND country:US")
+{:ok, result} = SonEx.MusicBrainz.search(:artist, "artist:nirvana AND country:US")
 result["artists"]
 # => [%{"id" => "...", "name" => "Nirvana", "score" => 100}, ...]
 result["count"]
 # => 15
 
 # Search for releases with pagination
-{:ok, result} = SonExMusicbrainzClient.search(
+{:ok, result} = SonEx.MusicBrainz.search(
   :release,
   "release:nevermind AND artist:nirvana",
   limit: 10,
@@ -157,13 +157,13 @@ result["count"]
 )
 
 # Search for recordings
-{:ok, result} = SonExMusicbrainzClient.search(
+{:ok, result} = SonEx.MusicBrainz.search(
   :recording,
   "recording:\"Smells Like Teen Spirit\" AND artist:nirvana"
 )
 
 # Complex search with multiple criteria
-{:ok, result} = SonExMusicbrainzClient.search(
+{:ok, result} = SonEx.MusicBrainz.search(
   :artist,
   "artist:beatles AND country:GB AND type:group",
   limit: 25
@@ -194,11 +194,11 @@ All functions return native Elixir maps parsed from JSON:
 
 ```elixir
 # Successful response
-{:ok, data} = SonExMusicbrainzClient.lookup(:artist, "mbid-here")
+{:ok, data} = SonEx.MusicBrainz.lookup(:artist, "mbid-here")
 # data is a map: %{"id" => "...", "name" => "...", ...}
 
 # Error responses are passed through from Req
-{:error, reason} = SonExMusicbrainzClient.lookup(:artist, "invalid-mbid")
+{:error, reason} = SonEx.MusicBrainz.lookup(:artist, "invalid-mbid")
 # Handle errors as needed
 ```
 
@@ -210,11 +210,11 @@ All functions return native Elixir maps parsed from JSON:
 artist_mbid = "5b11f4ce-a62d-471e-81fc-a69a8278c7da" # Nirvana
 
 # Get artist info
-{:ok, artist} = SonExMusicbrainzClient.lookup(:artist, artist_mbid)
+{:ok, artist} = SonEx.MusicBrainz.lookup(:artist, artist_mbid)
 IO.puts("Artist: #{artist["name"]}")
 
 # Browse all official albums
-{:ok, result} = SonExMusicbrainzClient.browse(
+{:ok, result} = SonEx.MusicBrainz.browse(
   :release_group,
   [artist: artist_mbid],
   type: "album",
@@ -231,7 +231,7 @@ end)
 ```elixir
 isrc = "USCA29900012"
 
-{:ok, result} = SonExMusicbrainzClient.search(:recording, "isrc:#{isrc}")
+{:ok, result} = SonEx.MusicBrainz.search(:recording, "isrc:#{isrc}")
 
 case result["recordings"] do
   [recording | _] ->
@@ -248,9 +248,9 @@ end
 label_mbid = "label-mbid-here"
 
 # Get all releases from a label
-{:ok, label_info} = SonExMusicbrainzClient.lookup(:label, label_mbid)
+{:ok, label_info} = SonEx.MusicBrainz.lookup(:label, label_mbid)
 
-{:ok, releases} = SonExMusicbrainzClient.browse(
+{:ok, releases} = SonEx.MusicBrainz.browse(
   :release,
   [label: label_mbid],
   limit: 100,
@@ -267,7 +267,7 @@ The library includes support for the [Cover Art Archive API](https://coverartarc
 
 ```elixir
 # Get cover art metadata for a release
-{:ok, metadata} = SonExMusicbrainzClient.fetch_release_cover_art("release-mbid")
+{:ok, metadata} = SonEx.MusicBrainz.fetch_release_cover_art("release-mbid")
 
 # Access image information
 Enum.each(metadata["images"], fn image ->
@@ -278,28 +278,28 @@ Enum.each(metadata["images"], fn image ->
 end)
 
 # Get the front cover image URL
-{:ok, url} = SonExMusicbrainzClient.fetch_front("release-mbid")
+{:ok, url} = SonEx.MusicBrainz.fetch_front("release-mbid")
 # => {:ok, "https://archive.org/download/mbid-770b9b80-.../image.jpg"}
 
 # Get a thumbnail (250px, 500px, or 1200px)
-{:ok, url} = SonExMusicbrainzClient.fetch_front("release-mbid", size: 500)
+{:ok, url} = SonEx.MusicBrainz.fetch_front("release-mbid", size: 500)
 # => {:ok, "https://archive.org/download/mbid-770b9b80-.../image-500.jpg"}
 
 # Get back cover
-{:ok, url} = SonExMusicbrainzClient.fetch_back("release-mbid")
+{:ok, url} = SonEx.MusicBrainz.fetch_back("release-mbid")
 # => {:ok, "https://archive.org/download/mbid-770b9b80-.../back.jpg"}
 
 # Get cover art for a release group
-{:ok, metadata} = SonExMusicbrainzClient.fetch_release_group_cover_art("release-group-mbid")
+{:ok, metadata} = SonEx.MusicBrainz.fetch_release_group_cover_art("release-group-mbid")
 
 # Get front cover from a release group
-{:ok, url} = SonExMusicbrainzClient.fetch_front(
+{:ok, url} = SonEx.MusicBrainz.fetch_front(
   "release-group-mbid",
   entity_type: :release_group
 )
 
 # Get specific image by ID
-{:ok, url} = SonExMusicbrainzClient.fetch_cover_art_image(
+{:ok, url} = SonEx.MusicBrainz.fetch_cover_art_image(
   "release-mbid",
   "1234567890",
   size: 250
