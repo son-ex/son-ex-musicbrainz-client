@@ -142,7 +142,7 @@ defmodule SonExMusicbrainzExtractorTest do
     end
 
     test "detects recording by length and video" do
-      recording = %{"length" => 355106, "video" => false}
+      recording = %{"length" => 355_106, "video" => false}
       assert {:ok, :recording} = Extractor.detect_entity_type(recording)
     end
 
@@ -193,6 +193,7 @@ defmodule SonExMusicbrainzExtractorTest do
 
       for type <- series_types do
         series = %{"type" => type}
+
         assert {:ok, :series} = Extractor.detect_entity_type(series),
                "Failed to detect series with type: #{type}"
       end

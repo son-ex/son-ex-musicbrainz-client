@@ -558,7 +558,7 @@ defmodule SonExMusicbrainzTest do
       # Create a plug that captures headers
       header_capture_plug = fn conn ->
         user_agent = Plug.Conn.get_req_header(conn, "user-agent") |> List.first()
-        assert user_agent == "SonExMusicbrainz/0.2.0"
+        assert user_agent == "SonExMusicbrainz/0.2.1"
 
         conn
         |> Plug.Conn.put_resp_content_type("application/json")

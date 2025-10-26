@@ -5,7 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.0] - 2025-10-25
+## [0.2.1] - 2025-10-25
+
+### Added
+- **Cover Art Archive API**: New `SonEx.MusicBrainz.CoverArt` module with full support for the Cover Art Archive API
+  - `fetch_release_cover_art/2` - Fetch cover art metadata for releases (returns JSON with image URLs and details)
+  - `fetch_release_group_cover_art/2` - Fetch cover art metadata for release groups
+  - `fetch_front/2` - Fetch front cover images with optional thumbnail sizes
+  - `fetch_back/2` - Fetch back cover images with optional thumbnail sizes
+  - `fetch_image_by_id/3` - Fetch specific cover art images by ID
+- **Thumbnail Support**: All image functions support optional `:size` parameter (250px, 500px, or 1200px)
+- **Smart Dispatch**: Cover art functions work with release/release-group maps, not just MBIDs
+- **Entity Type Option**: `fetch_front/2` and `fetch_back/2` support `:entity_type` option (`:release` or `:release_group`)
+- **Comprehensive Tests**: 20 new tests covering all cover art functionality
+- **Documentation**: Updated README with cover art examples and changelog section
+
+### Changed
+- Updated main `SonEx.MusicBrainz` module with cover art function delegates
+- Enhanced CLAUDE.md with Cover Art Archive API documentation
+
+## [0.2.0] - 2025-10-24
 
 ### Changed
 - Complete architecture overhaul with modular design pattern
@@ -110,5 +129,6 @@ SonEx.MusicBrainz.search_recordings("title:Bohemian Rhapsody")
 - **Type specs**: Full type specifications for all public functions
 - **Mock-based testing**: No real API calls required for testing
 
+[0.2.1]: https://github.com/son-ex/son-ex-musicbrainz-client/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/son-ex/son-ex-musicbrainz-client/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/son-ex/son-ex-musicbrainz-client/releases/tag/v0.1.0

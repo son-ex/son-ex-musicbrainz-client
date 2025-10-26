@@ -185,7 +185,15 @@ defmodule SonEx.MusicBrainz.Extractor do
 
   # Series: has type field with series-specific types
   # Note: Series are context-dependent and may need type checking
-  def detect_entity_type(%{"type" => type}) when type in ["Release group series", "Release series", "Recording series", "Work series", "Catalogue series", "Event series"] do
+  def detect_entity_type(%{"type" => type})
+      when type in [
+             "Release group series",
+             "Release series",
+             "Recording series",
+             "Work series",
+             "Catalogue series",
+             "Event series"
+           ] do
     {:ok, :series}
   end
 

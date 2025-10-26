@@ -77,6 +77,7 @@ defmodule SonEx.MusicBrainz do
     Instrument,
     Series,
     URL,
+    CoverArt,
     Client
   }
 
@@ -221,6 +222,29 @@ defmodule SonEx.MusicBrainz do
 
   @doc "Search for URLs."
   defdelegate search_urls(query, opts \\ []), to: URL, as: :search
+
+  ## Cover Art Functions
+
+  @doc "Fetch cover art metadata for a release."
+  defdelegate fetch_release_cover_art(source, opts \\ []),
+    to: CoverArt,
+    as: :fetch_release_cover_art
+
+  @doc "Fetch cover art metadata for a release group."
+  defdelegate fetch_release_group_cover_art(source, opts \\ []),
+    to: CoverArt,
+    as: :fetch_release_group_cover_art
+
+  @doc "Fetch the front cover image for a release or release group."
+  defdelegate fetch_front(source, opts \\ []), to: CoverArt, as: :fetch_front
+
+  @doc "Fetch the back cover image for a release or release group."
+  defdelegate fetch_back(source, opts \\ []), to: CoverArt, as: :fetch_back
+
+  @doc "Fetch a specific cover art image by ID."
+  defdelegate fetch_cover_art_image(source, image_id, opts \\ []),
+    to: CoverArt,
+    as: :fetch_image_by_id
 
   ## Generic Functions (for backward compatibility)
 

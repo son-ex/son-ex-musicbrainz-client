@@ -12,7 +12,7 @@ Add `son_ex_musicbrainz_client` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:son_ex_musicbrainz_client, "~> 0.1.0"}
+    {:son_ex_musicbrainz_client, "~> 0.2.1"}
   ]
 end
 ```
@@ -261,6 +261,64 @@ IO.puts("Label: #{label_info["name"]}")
 IO.puts("Total releases: #{releases["release-count"]}")
 ```
 
+### Working with Cover Art
+
+The library includes support for the [Cover Art Archive API](https://coverartarchive.org/), which provides cover art images for releases and release groups:
+
+```elixir
+# Get cover art metadata for a release
+{:ok, metadata} = SonExMusicbrainzClient.fetch_release_cover_art("release-mbid")
+
+# Access image information
+Enum.each(metadata["images"], fn image ->
+  IO.puts("Image URL: #{image["image"]}")
+  IO.puts("Front cover: #{image["front"]}")
+  IO.puts("Types: #{inspect(image["types"])}")
+  IO.puts("Thumbnails: #{inspect(Map.keys(image["thumbnails"]))}")
+end)
+
+# Get the front cover image URL
+{:ok, url} = SonExMusicbrainzClient.fetch_front("release-mbid")
+# => {:ok, "https://archive.org/download/mbid-770b9b80-.../image.jpg"}
+
+# Get a thumbnail (250px, 500px, or 1200px)
+{:ok, url} = SonExMusicbrainzClient.fetch_front("release-mbid", size: 500)
+# => {:ok, "https://archive.org/download/mbid-770b9b80-.../image-500.jpg"}
+
+# Get back cover
+{:ok, url} = SonExMusicbrainzClient.fetch_back("release-mbid")
+# => {:ok, "https://archive.org/download/mbid-770b9b80-.../back.jpg"}
+
+# Get cover art for a release group
+{:ok, metadata} = SonExMusicbrainzClient.fetch_release_group_cover_art("release-group-mbid")
+
+# Get front cover from a release group
+{:ok, url} = SonExMusicbrainzClient.fetch_front(
+  "release-group-mbid",
+  entity_type: :release_group
+)
+
+# Get specific image by ID
+{:ok, url} = SonExMusicbrainzClient.fetch_cover_art_image(
+  "release-mbid",
+  "1234567890",
+  size: 250
+)
+```
+
+**Available cover art functions:**
+- `fetch_release_cover_art/2` - Get all cover art metadata for a release (returns `{:ok, map()}`)
+- `fetch_release_group_cover_art/2` - Get cover art metadata for a release group (returns `{:ok, map()}`)
+- `fetch_front/2` - Get front cover image URL (returns `{:ok, url}`)
+- `fetch_back/2` - Get back cover image URL (returns `{:ok, url}`)
+- `fetch_cover_art_image/3` - Get specific image URL by ID (returns `{:ok, url}`)
+
+**Thumbnail sizes:** `250`, `500`, `1200` (pixels)
+
+**Response Format:**
+- **Metadata requests**: Return `{:ok, map()}` with JSON data containing image URLs and metadata
+- **Image requests**: Return `{:ok, url}` with the direct URL to the image as a string
+
 ## Rate Limiting
 
 MusicBrainz enforces rate limits (approximately 1 request per second for anonymous users). This client does **not** implement rate limiting internally.
@@ -301,6 +359,43 @@ Please ensure:
 - All tests pass (`mix test`)
 - Code is formatted (`mix format`)
 - Coverage remains high (`mix test --cover`)
+
+## Changelog
+
+### v0.2.1 (2025-10-25)
+
+**Added:**
+- Cover Art Archive API support with new `SonEx.MusicBrainz.CoverArt` module
+  - `fetch_release_cover_art/2` - Fetch cover art metadata for releases
+  - `fetch_release_group_cover_art/2` - Fetch cover art metadata for release groups
+  - `fetch_front/2` - Fetch front cover images with optional thumbnail sizes
+  - `fetch_back/2` - Fetch back cover images with optional thumbnail sizes
+  - `fetch_image_by_id/3` - Fetch specific cover art images by ID
+- Smart dispatch support for cover art functions (works with release/release-group maps)
+- Comprehensive test coverage for cover art functionality (20 new tests)
+- Documentation and examples for Cover Art Archive API
+
+### v0.2.0 (2025-10-24)
+
+**Added:**
+- Smart dispatch capabilities across all entity modules
+- Enhanced MBID extraction from entity maps
+- Entity-specific modules (Artist, Release, ReleaseGroup, Recording, etc.)
+- Comprehensive test coverage with mock-based testing
+- Pattern matching for entity type detection
+
+**Changed:**
+- Improved API design with `defdelegate` pattern
+- Better error handling and response normalization
+
+### v0.1.0 (Initial Release)
+
+**Added:**
+- Basic MusicBrainz API v2 client
+- Support for lookup, browse, and search operations
+- All core MusicBrainz entity types
+- Configurable HTTP options
+- User agent configuration
 
 ## License
 

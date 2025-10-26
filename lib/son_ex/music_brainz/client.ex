@@ -19,7 +19,7 @@ defmodule SonEx.MusicBrainz.Client do
   """
 
   @base_url "https://musicbrainz.org/ws/2"
-  @default_user_agent "SonExMusicbrainz/0.2.0"
+  @default_user_agent "SonExMusicbrainz/0.2.1"
 
   @type entity_type ::
           :area

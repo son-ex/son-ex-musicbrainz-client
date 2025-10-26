@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an Elixir library that provides a client for the MusicBrainz API (v0.2.0). It uses `req` as the HTTP client and returns responses as native Elixir maps parsed from JSON. The client features smart dispatch capabilities, allowing functions to intelligently extract identifiers from entity maps. It is designed for read-only operations (GET requests only) and does not include validation or data structures (plain maps only), as those will be handled by a separate Ecto-based library.
+This is an Elixir library that provides a client for the MusicBrainz API (v0.2.1). It uses `req` as the HTTP client and returns responses as native Elixir maps parsed from JSON. The client features smart dispatch capabilities, allowing functions to intelligently extract identifiers from entity maps. It is designed for read-only operations (GET requests only) and does not include validation or data structures (plain maps only), as those will be handled by a separate Ecto-based library.
 
 ## Development Commands
 
@@ -65,14 +65,16 @@ recompile()
 lib/son_ex/
 ├── music_brainz.ex              # Main interface module (defdelegate to entity modules)
 └── music_brainz/
-    ├── client.ex                 # Low-level HTTP client
+    ├── client.ex                 # Low-level HTTP client (MusicBrainz API)
     ├── extractor.ex              # Pattern matching for MBID extraction
     ├── artist.ex                 # Artist-specific functions with smart dispatch
     ├── release.ex                # Release-specific functions
     ├── release_group.ex          # ReleaseGroup-specific functions
-    └── recording.ex              # Recording-specific functions
+    ├── recording.ex              # Recording-specific functions
+    └── cover_art.ex              # Cover Art Archive API client
 
 test/son_ex_musicbrainz_test.exs # Test suite
+test/son_ex_musicbrainz_cover_art_test.exs # Cover Art tests
 config/config.exs                 # Configuration example
 docs/api_response_examples.md    # Real API response examples for reference
 mix.exs                           # Project configuration
@@ -110,6 +112,24 @@ Functions accept multiple input types and intelligently extract identifiers:
 - Rate limit: 1 request/second (not enforced by this client - handle at application level)
 - Required headers: meaningful User-Agent, Accept: application/json
 - Uses Elixir 1.18's built-in JSON encoding/decoding (no Jason dependency)
+
+### Cover Art Archive API Specifics
+
+The Cover Art Archive is a joint project between the Internet Archive and MusicBrainz.
+
+- Base URL: `https://coverartarchive.org`
+- Supported entities: release, release-group
+- Operations: Fetch metadata (JSON), fetch images (307 redirects), fetch thumbnails (250/500/1200px)
+- No rate limit currently enforced
+- Available via `SonEx.MusicBrainz.CoverArt` module or main module delegates:
+  - `fetch_release_cover_art/2` - Get all cover art metadata for a release
+  - `fetch_release_group_cover_art/2` - Get cover art for a release group
+  - `fetch_front/2` - Get front cover image (with optional `:size` and `:entity_type` options)
+  - `fetch_back/2` - Get back cover image
+  - `fetch_image_by_id/3` - Get specific image by ID
+- Smart dispatch works with release and release-group maps
+- Image requests return `{:ok, %Req.Response{status: 307, ...}}` with redirect location
+- Metadata requests return `{:ok, map()}` with cover art information
 
 ### HTTP Client Configuration
 
